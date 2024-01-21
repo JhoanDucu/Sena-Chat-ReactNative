@@ -1,38 +1,38 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, {createContext, useState} from "react";
+import React, { createContext, useEffect, useState } from "react";
 import { url } from "./config";
-import { Alert } from "react-native";
 
 export const AuthContext = createContext();
 
-export const AuthProvider = ({children}) => {
-    const [isLogIn, setLogIn] = useState(false);
-    const [userData, setUserData] = useState({});
+export const AuthProvider = ({ children, navigation }) => {
+  const [isLogIn, setLogIn] = useState(false);
+  const [userData, setUserData] = useState({});
 
-    const Login = (tipodoc, numerodoc, contrasena) => {
-        axios.post(`${url}/login`, {
-            tipodoc: tipodoc,
-            numerodoc: numerodoc,
-            contrasena: contrasena
-        }).then( res => {
-            let data = res.data;
-            console.log(data);
-            setUserData(data);
-            AsyncStorage.setItem('userData', JSON.stringify(userData));
-            setLogIn(false);
-        }).catch( e => {
-            console.log(`Error de: ${e}`);
-        });
-    };
-    
-    const Logout = () => {
-        setUserData(null);
-        setLogIn(false);
-    };
-    return (
-        <AuthContext.Provider value={{Login, Logout, isLogIn, userData}}>
-            {children}
-        </AuthContext.Provider>
-    );
-}
+  const Login = (datos) => {
+    axios.post(`${url}/usuario/login`, datos).then((res) => {
+        if (res.data !== "No existe registro") {
+          let { 0: ficha, 1: numerodoc, 2: rol } = res.data;
+          setUserData({ ficha: ficha, numerodoc: numerodoc, rol: rol });
+          AsyncStorage.setItem("userData", JSON.stringify(userData));
+          console.log(navigation.navigate('Inicio'));
+        }
+      })
+      .catch((e) => {
+        console.log(`Error de: ${e}`);
+      });
+  };
+
+  useEffect(() => {}, [userData]);
+
+  const Logout = () => {
+    setUserData({});
+    setLogIn(false);
+  };
+
+  return (
+    <AuthContext.Provider value={{ Login, Logout, isLogIn, userData }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
